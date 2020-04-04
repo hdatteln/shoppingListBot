@@ -1,0 +1,15 @@
+{
+  "name": "shoppinglistbot",
+  "version": "1.0.0",
+  "description": "A bot for creating and maintaining shopping lists",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "slackbot",
+    "shoppingbot"
+  ],
+  "author": "Heidi Duchting: h.duechting@gmx.de",
+  "license": "ISC"
+}
