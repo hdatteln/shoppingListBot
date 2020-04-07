@@ -1,0 +1,23 @@
+{
+  "name": "shoppinglistbot",
+  "version": "1.0.0",
+  "description": "A bot for creating and maintaining shopping lists",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "slackbot",
+    "shoppingbot"
+  ],
+  "author": "Heidi Duchting: h.duechting@gmx.de",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "botbuilder-adapter-slack": "^1.0.10",
+    "dotenv": "^8.2.0",
+    "restify": "^8.5.1",
+    "slackbots": "^1.2.0"
+  }
+}

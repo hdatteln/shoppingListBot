@@ -1,0 +1,51 @@
+---
+- name: install and configure the shoppingListBot app
+  hosts: 'shoppingBot'
+
+  vars:
+    appFile : 'shoppingListBot.zip'
+
+  tasks:
+    - name: "Zip up the application directory"
+      archive:
+        path: "../app"
+        dest: "shoppingListBot.tgz"
+      delegate_to: localhost
+
+    - name: "Create /apps directory"
+      file:
+        path: /apps
+        state: directory
+        owner: heidi
+        group: heidi
+      become: yes
+
+    - name: Copy shoppingListBot.tgz file
+      copy:
+        src: shoppingListBot.tgz
+        dest: /apps/
+        owner: heidi
+        group: heidi
+        mode: '0644'
+
+    - name: Install node.js if not present
+      become: yes
+      apt:
+        name: nodejs
+        state: latest
+
+    - name: "Install forever (to run Node.js app)."
+      become: yes
+      npm:
+        name: forever
+        global: yes
+        state: present
+
+    - name: "Check list of Node.js apps running."
+      command: forever list
+      register: forever_list
+      changed_when: false
+
+    - name: "Start app."
+      command: forever start /apps/app/index.js
+      when: "forever_list.stdout.find('/apps/app/index.js') == -1"
