@@ -1,4 +1,5 @@
 const timingSafeCompare = require('tsscmp');
+const crypto = require('crypto');
 
 const isVerified = (req) => {
   const signature = req.headers['x-slack-signature'];
