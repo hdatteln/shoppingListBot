@@ -1,25 +1,36 @@
-const { Botkit } = require('botkit');
-const { SlackAdapter } = require('botbuilder-adapter-slack');
-require('dotenv').config();
+const express = require('express');
+const bodyParser = require('body-parser');
+const axios = require('axios');
+const signature = require('./verifySignature');
 
-if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET || !process.env.PORT || !process.env.VERIFICATION_TOKEN) {
-  console.log('Error: Specify CLIENT_ID, CLIENT_SECRET, VERIFICATION_TOKEN and PORT in environment');
-  process.exit(1);
-} else {
-  console.log('Good job, you have the variables!');
-}
+const app = express();
 
-const adapter = new SlackAdapter({
-  clientSigningSecret: process.env.CLIENT_SIGNING_SECRET,
-  botToken: process.env.BOT_TOKEN,
-  json_file_store: "./db_slackbutton_slash_command/",
-});
+const rawBodyBuffer = (req, res, buf, encoding) => {
+  if (buf && buf.length)  req.rawBody = buf.toString(encoding || 'utf8');
+};
 
-const controller = new Botkit({
-  adapter,
-  // ...other options
-});
+app.use(bodyParser.urlencoded({verify: rawBodyBuffer, extended: true }));
+app.use(bodyParser.json({ verify: rawBodyBuffer }));
 
-controller.on('message', async(bot, message) => {
-  await bot.reply(message, 'I heard a message!');
+const server = app.listen(3000);
+
+app.post('/command', async (req, res) => {
+
+  if(!signature.isVerified(req)) {
+    res.sendStatus(404);
+    return;
+
+  } else {
+    const query = req.body.text ? req.body.text : 'add, milk';
+    const queries = query.split(',');
+    const todo = queries.shift(); // "Pizza"
+    const product = queries; // "San Francisco, CA"
+    const retval = [{'name': 'milk'}, {'name': 'bread'}, {'name': 'bananas'}];
+  }
+
+  const message = {
+    response_type: 'in_channel',
+    text: retval[0].name,
+  };
+  res.json(message);
 });
