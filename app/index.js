@@ -15,9 +15,11 @@ app.use(bodyParser.json({ verify: rawBodyBuffer }));
 const server = app.listen(3000);
 
 app.post('/command', async (req, res) => {
+  const retval = [{'name': 'milk'}, {'name': 'bread'}, {'name': 'bananas'}];
 
   if(!signature.isVerified(req)) {
     res.sendStatus(404);
+    console.log('not verified');
     return;
 
   } else {
@@ -25,9 +27,8 @@ app.post('/command', async (req, res) => {
     const queries = query.split(',');
     const todo = queries.shift(); // "Pizza"
     const product = queries; // "San Francisco, CA"
-    const retval = [{'name': 'milk'}, {'name': 'bread'}, {'name': 'bananas'}];
-  }
 
+  }
   const message = {
     response_type: 'in_channel',
     text: retval[0].name,
