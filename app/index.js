@@ -25,8 +25,8 @@ app.post('/command', async (req, res) => {
   } else {
     const query = req.body.text ? req.body.text : 'add, milk';
     const queries = query.split(',');
-    const todo = queries.shift(); // "Pizza"
-    const product = queries; // "San Francisco, CA"
+    const todo = queries.shift();
+    const product = queries;
 
   }
   const message = {
