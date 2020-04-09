@@ -20,13 +20,12 @@
         group: heidi
       become: yes
 
-    - name: Copy shoppingListBot.tgz file
-      copy:
-        src: shoppingListBot.tgz
-        dest: /apps/
+    - name: "Unarchive shoppingListBot.tgz"
+      unarchive:
+        src: "shoppingListBot.tgz"
+        dest: "/apps/"
         owner: heidi
         group: heidi
-        mode: '0644'
 
     - name: Install node.js if not present
       become: yes
