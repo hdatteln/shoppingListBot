@@ -1,37 +1,24 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const axios = require('axios');
-const signature = require('./verifySignature');
+const { createEventAdapter } = require('@slack/events-api');
+const slackEvents = createEventAdapter(process.env.CLIENT_SIGNING_SECRET);
 
+const port = process.env.PORT || 3000;
 const app = express();
 
-const rawBodyBuffer = (req, res, buf, encoding) => {
-  if (buf && buf.length)  req.rawBody = buf.toString(encoding || 'utf8');
-};
+app.use('/slack/events', slackEvents.expressMiddleware());
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
 
-app.use(bodyParser.urlencoded({verify: rawBodyBuffer, extended: true }));
-app.use(bodyParser.json({ verify: rawBodyBuffer }));
+// Starts server
+app.listen(port, function() {
+  console.log('Bot is listening on port ' + port)
+});
 
-const server = app.listen(3000);
-
-app.post('/command', async (req, res) => {
-  const retval = [{'name': 'milk'}, {'name': 'bread'}, {'name': 'bananas'}];
-
-  if(!signature.isVerified(req)) {
-    res.sendStatus(404);
-    console.log('not verified');
-    return;
-
-  } else {
-    const query = req.body.text ? req.body.text : 'add, milk';
-    const queries = query.split(',');
-    const todo = queries.shift();
-    const product = queries;
-
+slackEvents.on('app_mention', async (event) => {
+  try {
+    console.log("I got a mention in this channel", event.channel)
+  } catch (e) {
+    console.log("error: ", e)
   }
-  const message = {
-    response_type: 'in_channel',
-    text: retval[0].name,
-  };
-  res.json(message);
 });
