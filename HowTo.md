@@ -13,4 +13,14 @@ A bot token makes it possible for users to interact with your app. A bot token l
 In order to do this:
 1) Go to 'App Home'
    ![App Home](images/botsetup1.png)
+2) Click 'Review Scopes to Add'
+   ![Review Scopes](images/botsetup2.png)
+3) Let's add the following bot token scopes to start with (these can be adjusted later:
+   * `app_mentions:read`
+   * `chat:write`
+   * `commands`
+   * `users:read`
+   ![Token Scopes](images/botsetup3.png)
+   
+   
 
