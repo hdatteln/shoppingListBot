@@ -45,7 +45,11 @@ In order to do this:
    ```
    
    
-2) Add Node SDK Events API: `yarn add @slack/events-api`
+2) Add the following modules:
+   * Slack Node SDK Events API: `yarn add @slack/events-api`
+   * Slack Node SDK web API: `yarn add @slack/web-api`
+   * Express: `yarn add express`
+   * Body Parser: `yarn add body-parser`
 3) Creating a URL for our Node Server to Accept Events:
     So you can develop locally, without having to constantly redeploy.
     Follow the steps here: https://api.slack.com/tutorials/tunneling-with-ngrok
@@ -76,7 +80,7 @@ export BOT_TOKEN=xxx
 ## Enable Events:
 1) Go to 'Events Subscriptions' and enable the toggle button:
    ![](images/eventsub1.png)
-2) Enter your events endpoint URL, e.g.: `https://b6c1ae28.ngrok.io/slack/events` 
+2) Enter your events endpoint URL, e.g.: `https://b6c1ae28.ngrok.io/slack/events`  (as you develop, if your ngrok URL domain changes after restarts, you need to update this URL setting again)
 3) Once this URL is verified, we can stop the ./node_modules/.bin/slack-verify server.
 
    
@@ -122,4 +126,39 @@ You should see the expected console output:
 
 ![](images/bottest.png)
 
-  
+## Responding to mentions  
+
+ Add the web client to your app.
+ You also need the bot-token (from the oauth section of the Slack App page), which you have saved in an environment variable in a previous step:
+ 
+ ```
+const { WebClient } = require('@slack/web-api');
+
+const token = process.env.BOT_TOKEN;
+const webClient = new WebClient(token);
+```
+
+You can quickly test if this works by updating your 'app_mention' event handler like this: 
+
+```
+slackEvents.on('app_mention', async (event) => {
+  try {
+    console.log(event);
+    let messageBlock = {
+      "channel": event.channel,
+      "text": "Hello"
+    };
+    webClient.chat.postMessage(messageBlock)
+  } catch (e) {
+    console.log("error: ", e)
+  }
+});
+```
+The console.log shows you all the properties you get from the incoming event, and then you can post a messageBlock to back to the channel.
+
+## Introducing Slack Block Kit
+
+Now, for our bot message response, I want it to be a simple message that contains a button that launches a Block Kit modal:
+
+![](images/botkit1.png)
+
