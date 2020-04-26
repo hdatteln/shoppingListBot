@@ -2,10 +2,10 @@
   "name": "shoppinglistbot",
   "version": "1.0.0",
   "description": "A bot for creating and maintaining shopping lists",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node app.js"
   },
   "keywords": [
     "slackbot",
@@ -17,10 +17,8 @@
     "@slack/events-api": "^2.3.2",
     "@slack/interactive-messages": "^1.5.0",
     "@slack/web-api": "^5.8.0",
-    "axios": "^0.19.2",
     "body-parser": "^1.19.0",
-    "express": "^4.17.1",
-    "tsscmp": "^1.0.6"
+    "express": "^4.17.1"
   },
   "repository": {
     "type": "git",
