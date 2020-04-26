@@ -22,13 +22,14 @@ For this, follow these steps:
    ![App Home](images/botsetup1.png)
 2) Click 'Review Scopes to Add'
    ![Review Scopes](images/botsetup2.png)
-3) Let's add the following bot token scopes to start with (these can be adjusted later:
+3) Let's add the following bot token scopes to start with (these can be adjusted later):
    * `app_mentions:read`
    * `chat:write`
    * `commands`
    * `users:read`
    ![Token Scopes](images/botsetup3.png)
-4) After that, you can go ahead and install your new app to your workspace
+4) After that, you can go ahead and install your new app to your workspace.
+   Navigate to 'OAuth & Permissions', and click 'Install App to Workspace':
    ![Install to workspace](images/botsetup4.png)
    
 ## Setting up the Node.js App
