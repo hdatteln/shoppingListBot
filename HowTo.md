@@ -1,6 +1,10 @@
-# How to develop a Slack Bot App
+# How to develop a very basic Slack Bot App
 
-I used the steps from https://www.javascriptjanuary.com/blog/building-a-slack-app-with-express-and-the-node-sdk as a base, but some steps had changed a little since the article was written, so adjusted them below.
+This document contains steps for setting up a very basic slack up that uses Block Kit elements.  
+It is meant as a first steps guide to get an overview of the different components that are required for this.  
+
+I used [these steps](https://www.javascriptjanuary.com/blog/building-a-slack-app-with-express-and-the-node-sdk) written by Daria Caraway as a base, and Daria's article has much more detail than the below rough guide.
+ However, some steps had changed a little since the article was written, so that's why I wrote up the following steps.
 
 ## Creating a Slack Application & Bot
 
