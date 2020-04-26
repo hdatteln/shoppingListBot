@@ -59,22 +59,24 @@ After the bot basics have been configured via the app configuration page, let's 
 3) Now, we need to create a public a URL for our node server, so that can accept events sent from Slack.
    A completed slack bot would be deployed into a production environment and configured to be available to send and receive http requests. But while you are developing locally, it would be tiresome if you had to constantly redeploy your app in order to test your last changes.
     'ngrok' is a handy solution for this, which sets up tunnelling and a temporary public URL for your local node app.  
-    Follow the steps here: https://api.slack.com/tutorials/tunneling-with-ngrok
-    In the last step, run `./ngrok http 3000` (3000 matches the port in your express)
-4) Create a URL endpoint to accepts the events on our Express server. Let's use this format:
-  `https://[ngroc forwarding domain]/slack/events`
-  this could look e.g. like this: `https://b6c1ae28.ngrok.io/slack/events`  
-5) Authentication:
-    Get the client signin secret under 'Basic Information':
+    Follow the steps here: https://api.slack.com/tutorials/tunneling-with-ngrok  
+    In the last step, run `./ngrok http 3000` (3000 matches the port in your express app, set in `index.js`)
+4) Assemble an endpoint URL to accept the events on our express server. Let's use this format:  
+  `https://[ngroc forwarding domain]/slack/events`  
+  This could look e.g. like this: `https://b6c1ae28.ngrok.io/slack/events`
+  (The URL will be used in the next steps)
+5) Authentication:  
+    Get the client signing secret from the Slack app configuration page under 'Basic Information' (under 'App Credentials'):
     ![](images/appauth1.png)
     
-    Then run:
+    Then run this command from your project root directory (replace `<client signing secret>` with the signing secret for your app, and `https://b6c1ae28.ngrok.io/slack/events` with the URL you assembled in step 4):
    
-   `$ ./node_modules/.bin/slack-verify --secret <client signin secret> https://b6c1ae28.ngrok.io/slack/events --port=3000`
+   `$ ./node_modules/.bin/slack-verify --secret <client signing secret> https://b6c1ae28.ngrok.io/slack/events --port=3000`
    
    (if you get a 'port in already in use' error message, check if your express app is already running, and if so, stop it.)
    
-6) While on the 'Basic Information' tab, save the different credentials as environment variables for later use:
+6) Back on the Slack app configuration page, while on the 'Basic Information' tab, save the different credentials as environment variables for later use, e.g. in your `~/.bash_profile` file
+(the bot token can be found under 'OAuth & Permissions'):
 
 ```
 export CLIENT_ID=xxx
@@ -84,24 +86,22 @@ export CLIENT_SIGNING_SECRET=xxx
 export BOT_TOKEN=xxx
 ```
 
-## Enable Events:
-1) Go to 'Events Subscriptions' and enable the toggle button:
+## Enable Events
+1) On the Slack app configuration page, go to 'Events Subscriptions' and enable the toggle button:
    ![](images/eventsub1.png)
 2) Enter your events endpoint URL, e.g.: `https://b6c1ae28.ngrok.io/slack/events`  (as you develop, if your ngrok URL domain changes after restarts, you need to update this URL setting again)
-3) Once this URL is verified, we can stop the ./node_modules/.bin/slack-verify server.
-
    
-Next, we need to register to which events we want our bot to have access.
+Next, we need to register the events which we want our bot to  access.
 
-1) Click Into Subscribe to bot events
+1) On the Slack app configuration page, under 'Events Subscriptions', Click Subscribe to bot events
 2) Click Add Bot User Event
-3) Search for app_mention and add it
-4) Save your changes at the bottom of the page!!!!
+3) Search for `app_mention` and add it
+4) Save your changes at the bottom of the page
    
 ## We can code now!
 
-We can now call on the slack events-api from our express app.
-In index.js, I added (note that CLIENT_SIGNING_SECRET is taken from the environment variables):
+We can now call the slack events-api from our express app.  
+In index.js, add (note that CLIENT_SIGNING_SECRET is taken from the environment variables):
 
 ```
 const { createEventAdapter } = require('@slack/events-api');
@@ -127,15 +127,15 @@ slackEvents.on('app_mention', async (event) => {
 });
 ```  
   
-Start the app using `node index.js`   
-To test, invite the bot to a slack channel, and mention it in a message. 
+Restart the app using `node index.js`   
+To test, invite the bot to a slack channel, and mention it in a message.   
 You should see the expected console output:
 
 ![](images/bottest.png)
 
 ## Responding to mentions  
 
- Add the web client to your app.
+ Add the web client to your app.  
  You also need the bot-token (from the oauth section of the Slack App page), which you have saved in an environment variable in a previous step:
  
  ```
@@ -161,11 +161,11 @@ slackEvents.on('app_mention', async (event) => {
   }
 });
 ```
-The console.log shows you all the properties you get from the incoming event, and then you can post a messageBlock to back to the channel.
+After an app restart, when at-mentioning the bot in slack, the console.log shows you all the properties you get from the incoming event, and then posts a messageBlock to back to the channel.
 
 ## Introducing Slack Block Kit
 
-Now, for our bot message response, I want it to be a simple message that contains a button that launches a Block Kit modal:
+Now, for our bot message response, let's set up a simple message with a button that launches a Block Kit modal:
 
 ![](images/botkit1.png)
 
@@ -194,10 +194,10 @@ slackEvents.on('app_mention', async (event) => {
 ```
 
 ## The button
-Right now, nothing happens when clicking on the button in the bot's reply messag;..
+Right now, nothing happens when clicking on the button in the bot's reply messag.  
 Note that we passed in an `action_id` of `open_modal_button`
 
-For this, we need to first add the Slack Interactive Messaging API to our index.js file, and set an endpoint URL, similar to what we did for events:
+In order to make the button active, we need to first add the Slack Interactive Messaging API to our index.js file, and set an endpoint URL, similar to what we did for events:
 
 ```
 const { createMessageAdapter } = require('@slack/interactive-messages');
@@ -208,17 +208,18 @@ app.use('/slack/actions', slackInteractions.expressMiddleware());
 ```
 
 Then, register the new Actions Route with Slack:
-1) In your app configuration page, in the navigation bar, click on `Interactivity & Shortcuts`.
+1) On the Slack app configuration page, in the navigation bar, click on `Interactivity & Shortcuts`.
 2) Enable 'Interactivity':
     ![](images/botaction.png)
+3) Enter a Request URL (let's use /slack/actions as an endpoint),e.g.: `https://b6c1ae28.ngrok.io/slack/actions` (for you, the ngrok domain will be different). 
 3) Save the changes
 
-Now, let's add a listener for our `open_modal_button` action_id:
+Now, let's add a listener for our `open_modal_button` action_id in index.js:
 
 ```
 slackInteractions.action({ actionId: 'open_modal_button' }, async (payload) => {
   try {
-    console.log("button click recieved", payload)
+    console.log("button click received", payload)
   } catch (e) {
     console.log('Error: ', e)
   }
@@ -228,14 +229,14 @@ slackInteractions.action({ actionId: 'open_modal_button' }, async (payload) => {
 });
 ```
 Restart the node server, and at-mention the bot in your chat again;  
-you should see the 'button click received' + payload message in the console (nothing is sent back to the chat channel at this point)
+You should see the 'button click received' + payload message in the console (nothing is sent back to the chat channel at this point)
 
 ## Building the modal
-Now we can build the modal!  
+Now we can build the modal using Block Kit.  
 
-1) Go to Block Kit Builder: https://api.slack.com/tools/block-kit-builder
+1) Open the Block Kit Builder page: https://api.slack.com/tools/block-kit-builder
 2) Select 'Modal Preview'; You might see some template code; To start with a blank modal, click the 'clear code' button;
-3) In the left navigation bar, click on 'Section' and 'Singleline' (under Inputs) to add a plain section element, and a one-line text input element to your modal
+3) In the left navigation bar, now click on 'Section' and 'Singleline' (under Inputs) to add a plain section element, and a one-line text input element to your modal
  ![](images/blockkit1.png)
 3) Copy the json, and add it as a variable to your index.js file:
 ```
@@ -299,8 +300,8 @@ slackInteractions.action({ actionId: 'open_modal_button' }, async (payload) => {
 });
 ```
 
-Now, when clicking the 'launch' button in the bot's message, the new modal should be opened.
-Since the modal has a Submit button, we can tie that one again to a slackInteractions action;  
+Now, when clicking the 'launch' button in the bot's message, the new modal should be opened.  
+Since the modal has a Submit button, we can tie that once again to a slackInteractions action;  
 For this, we need to add a `callback_id` property to the modal json:
 
 ```
