@@ -27,7 +27,14 @@ In order to do this:
    ![Install to workspace](images/botsetup4.png)
    
 ## Setting up the Node.js App
-1) Create a new basic express app:
+   
+1) Add the following modules (using yarn or npm):
+   * Slack Node SDK Events API: `yarn add @slack/events-api`
+   * Slack Node SDK web API: `yarn add @slack/web-api`
+   * Slack Node Interactive Messages: `yarn add @slack/interactive-messages`
+   * Express: `yarn add express`
+   * Body Parser: `yarn add body-parser`
+2) Create a new basic express app:
     ```
    const express = require('express');
    const bodyParser = require('body-parser');
@@ -42,14 +49,7 @@ In order to do this:
    app.listen(port, function() {
       console.log('Bot is listening on port ' + port)
    });
-   ```
-   
-   
-2) Add the following modules:
-   * Slack Node SDK Events API: `yarn add @slack/events-api`
-   * Slack Node SDK web API: `yarn add @slack/web-api`
-   * Express: `yarn add express`
-   * Body Parser: `yarn add body-parser`
+   ```   
 3) Creating a URL for our Node Server to Accept Events:
     So you can develop locally, without having to constantly redeploy.
     Follow the steps here: https://api.slack.com/tutorials/tunneling-with-ngrok
@@ -162,3 +162,209 @@ Now, for our bot message response, I want it to be a simple message that contain
 
 ![](images/botkit1.png)
 
+
+```
+slackEvents.on('app_mention', async (event) => {
+  try {
+    console.log(event);
+    const messageBlock = {
+      'channel': event.channel,
+      'blocks': [{
+        'type': 'section',
+        'text': {'type': 'mrkdwn', 'text': 'Hello, thanks for calling me. Would you like to launch a modal?'},
+        'accessory': {
+          'type': 'button', 'action_id': 'open_modal_button', // We need to add this
+          'text': {'type': 'plain_text', 'text': 'Launch', 'emoji': true}, 'value': 'launch_button_click'
+        }
+      }]
+    };
+    const res = await webClient.chat.postMessage(messageBlock);
+    console.log('Message sent: ', res.ts);
+  } catch (e) {
+    console.log('error: ', e);
+  }
+});
+```
+
+## The button
+Right now, nothing happens when clicking on the button in the bot's reply messag;..
+Note that we passed in an `action_id` of `open_modal_button`
+
+For this, we need to first add the Slack Interactive Messaging API to our index.js file, and set an endpoint URL, similar to what we did for events:
+
+```
+const { createMessageAdapter } = require('@slack/interactive-messages');
+
+const slackInteractions = createMessageAdapter(process.env.CLIENT_SIGNING_SECRET);
+
+app.use('/slack/actions', slackInteractions.expressMiddleware());
+```
+
+Then, register the new Actions Route with Slack:
+1) In your app configuration page, in the navigation bar, click on `Interactivity & Shortcuts`.
+2) Enable 'Interactivity':
+    ![](images/botaction.png)
+3) Save the changes
+
+Now, let's add a listener for our `open_modal_button` action_id:
+
+```
+slackInteractions.action({ actionId: 'open_modal_button' }, async (payload) => {
+  try {
+    console.log("button click recieved", payload)
+  } catch (e) {
+    console.log('Error: ', e)
+  }
+  return {
+    text: 'Processing...',
+  }
+});
+```
+Restart the node server, and at-mention the bot in your chat again;  
+you should see the 'button click received' + payload message in the console (nothing is sent back to the chat channel at this point)
+
+## Building the modal
+Now we can build the modal!  
+
+1) Go to Block Kit Builder: https://api.slack.com/tools/block-kit-builder
+2) Select 'Modal Preview'; You might see some template code; To start with a blank modal, click the 'clear code' button;
+3) In the left navigation bar, click on 'Section' and 'Singleline' (under Inputs) to add a plain section element, and a one-line text input element to your modal
+ ![](images/blockkit1.png)
+3) Copy the json, and add it as a variable to your index.js file:
+```
+const modalBlock = {
+  "type": "modal",
+  "title": {
+    "type": "plain_text",
+    "text": "My App",
+    "emoji": true
+  },
+  "submit": {
+    "type": "plain_text",
+    "text": "Submit",
+    "emoji": true
+  },
+  "close": {
+    "type": "plain_text",
+    "text": "Cancel",
+    "emoji": true
+  },
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "plain_text",
+        "text": "This is a plain text section block.",
+        "emoji": true
+      }
+    },
+    {
+      "type": "input",
+      "element": {
+        "type": "plain_text_input"
+      },
+      "label": {
+        "type": "plain_text",
+        "text": "Label",
+        "emoji": true
+      }
+    }
+  ]
+};
+```
+
+Now we can tie that to a Webclient response in our slackInteractions.action event listener:
+
+```
+slackInteractions.action({ actionId: 'open_modal_button' }, async (payload) => {
+  try {
+    await webClient.views.open({
+        trigger_id: payload.trigger_id,
+        view: modalBlock
+      }
+    )
+  } catch (e) {
+    console.log('Error: ', e)
+  }
+  return {
+    text: 'Processing...',
+  }
+});
+```
+
+Now, when clicking the 'launch' button in the bot's message, the new modal should be opened.
+Since the modal has a Submit button, we can tie that one again to a slackInteractions action;  
+For this, we need to add a `callback_id` property to the modal json:
+
+```
+const modalBlock = {
+  "type": "modal",
+  "callback_id": "example_modal_submit",
+  "title": {
+    "type": "plain_text",
+    "text": "My App",
+    "emoji": true
+  },
+(...)
+```
+
+you also need to add a `block_id` to your input field block, as well as an `action_id` to the input element, so you can retrieve the input value later:
+
+```
+(...)
+    {
+      "type": "input",
+      "block_id": "example_input_block",
+      "element": {
+        "action_id": "example_input_element",
+        "type": "plain_text_input"
+      },
+      "label": {
+        "type": "plain_text",
+        "text": "Label",
+        "emoji": true
+      }
+(...)
+```
+
+Then, you can add the submit event handler as follows:
+
+```
+slackInteractions.viewSubmission('example_modal_submit' , async (payload) => {
+  const blockData = payload.view.state;
+  const nameInput = blockData.values.example_input_block.example_input_element.value;
+  console.log(nameInput);
+  return {
+    response_action: "clear"
+  }
+});
+```
+
+The return value `response_action: "clear"` tells the modal to close.
+
+### Returning an error
+Slack already has some error handling for its modals, but if you want to set up some custom validation, it can be done like this:
+
+```
+slackInteractions.viewSubmission('example_modal_submit' , async (payload) => {
+  const blockData = payload.view.state;
+  const nameInput = blockData.values.example_input_block.example_input_element.value;
+  if (nameInput.length < 2) {
+    return {
+      "response_action": "errors",
+      "errors": {
+        "example_input_block": "The input must have more than one letter."
+      }
+    }
+  }
+  return {
+    response_action: "clear"
+  }
+});
+```
+
+And that's it for the basics.  
+
+## Resources
+* Check out Block Kit Builder for making more complex modals: https://api.slack.com/tools/block-kit-builder  
+* Node Slack SDK Documentation: https://slack.dev/node-slack-sdk/
