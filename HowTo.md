@@ -33,14 +33,14 @@ For this, follow these steps:
    ![Install to workspace](images/botsetup4.png)
    
 ## Setting up the Node.js App
-   
+After the bot basics have been configured via the app configuration page, let's start setting up the node.js/express bot app:   
 1) Add the following modules (using yarn or npm):
    * Slack Node SDK Events API: `yarn add @slack/events-api`
-   * Slack Node SDK web API: `yarn add @slack/web-api`
+   * Slack Node SDK Web API: `yarn add @slack/web-api`
    * Slack Node Interactive Messages: `yarn add @slack/interactive-messages`
    * Express: `yarn add express`
    * Body Parser: `yarn add body-parser`
-2) Create a new basic express app:
+2) Create a new basic express app (`index.js`):
     ```
    const express = require('express');
    const bodyParser = require('body-parser');
@@ -56,8 +56,9 @@ For this, follow these steps:
       console.log('Bot is listening on port ' + port)
    });
    ```   
-3) Creating a URL for our Node Server to Accept Events:
-    So you can develop locally, without having to constantly redeploy.
+3) Now, we need to create a public a URL for our node server, so that can accept events sent from Slack.
+   A completed slack bot would be deployed into a production environment and configured to be available to send and receive http requests. But while you are developing locally, it would be tiresome if you had to constantly redeploy your app in order to test your last changes.
+    'ngrok' is a handy solution for this, which sets up tunnelling and a temporary public URL for your local node app.  
     Follow the steps here: https://api.slack.com/tutorials/tunneling-with-ngrok
     In the last step, run `./ngrok http 3000` (3000 matches the port in your express)
 4) Create a URL endpoint to accepts the events on our Express server. Let's use this format:
@@ -373,4 +374,5 @@ And that's it for the basics.
 
 ## Resources
 * Check out Block Kit Builder for making more complex modals: https://api.slack.com/tools/block-kit-builder  
-* Node Slack SDK Documentation: https://slack.dev/node-slack-sdk/
+* Node Slack SDK ocumentation: https://slack.dev/node-slack-sdk/
+* Ngrok documentation: https://ngrok.com/
