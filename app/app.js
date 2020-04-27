@@ -3,6 +3,16 @@ const bodyParser = require('body-parser');
 const {createEventAdapter} = require('@slack/events-api');
 const {WebClient} = require('@slack/web-api');
 const {createMessageAdapter} = require('@slack/interactive-messages');
+const shoplist = require('./modals/shopList');
+const Dao = require('./db/dao');
+
+let appDao = new Dao('./db/shoplist.db');
+const sl_sql = `CREATE TABLE IF NOT EXISTS shoplist (id INTEGER PRIMARY KEY AUTOINCREMENT, item TEXT)`;
+appDao.run(sl_sql);
+
+
+const bkShopListForm = shoplist.bkShopListForm;
+const bkShopList = shoplist.bkShopList;
 
 const port = process.env.PORT || 3000;
 const app = express();
@@ -24,147 +34,43 @@ app.listen(port, function () {
 
 let itemsToBuy = [];
 
-const modalBlock = {
-  'type': 'modal',
-  'callback_id': 'shoplist_modal_submit',
-  'title': {
-    'type': 'plain_text',
-    'text': 'Shopping List',
-    'emoji': true
-  },
-  'submit': {
-    'type': 'plain_text',
-    'text': 'Submit',
-    'emoji': true
-  },
-  'close': {
-    'type': 'plain_text',
-    'text': 'Cancel',
-    'emoji': true
-  },
-  'blocks': [
-    {
-      'type': 'section',
-      'text': {
-        'type': 'plain_text',
-        'text': 'Add items to the shopping list, either by selecting from a list of items we often buy, or by entering into the input field',
-        'emoji': true
-      }
-    },
-    {
-      'type': 'section',
-      'block_id': 'regular_items_section',
-      'text': {
-        'type': 'mrkdwn',
-        'text': 'Pick from items we buy regularly'
-      },
-      'accessory': {
-        'type': 'multi_static_select',
-        'action_id': 'shoplist_input_block',
-        'placeholder': {
-          'type': 'plain_text',
-          'text': 'Select items',
-          'emoji': true
-        },
-        'options': [
-          {
-            'text': {
-              'type': 'plain_text',
-              'text': 'Milk',
-              'emoji': true
-            },
-            'value': 'milk'
-          },
-          {
-            'text': {
-              'type': 'plain_text',
-              'text': 'Bread',
-              'emoji': true
-            },
-            'value': 'bread'
-          },
-          {
-            'text': {
-              'type': 'plain_text',
-              'text': 'Water',
-              'emoji': true
-            },
-            'value': 'water'
-          },
-          {
-            'text': {
-              'type': 'plain_text',
-              'text': 'Yoghurt',
-              'emoji': true
-            },
-            'value': 'yoghurt'
-          },
-          {
-            'text': {
-              'type': 'plain_text',
-              'text': 'Cat Food',
-              'emoji': true
-            },
-            'value': 'catfood'
-          },
-          {
-            'text': {
-              'type': 'plain_text',
-              'text': 'Toilet Paper',
-              'emoji': true
-            },
-            'value': 'toilet paper'
-          },
-          {
-            'text': {
-              'type': 'plain_text',
-              'text': 'Eggs',
-              'emoji': true
-            },
-            'value': 'eggs'
-          },
-          {
-            'text': {
-              'type': 'plain_text',
-              'text': 'Coffee',
-              'emoji': true
-            },
-            'value': 'coffee'
-          }
-        ]
-      }
-    }
-  ]
-};
-
-slackInteractions.action({actionId: 'shoplist_input_block'}, async (payload) => {
+slackInteractions.action({actionId: 'removeFrom_shoplist_btn'}, async (payload) => {
   itemsToBuy = [];
-  payload.actions.map((action => {
-    if (action.block_id === 'regular_items_section') {
-      itemsToBuy = action.selected_options.map((selOption) => {
-        return selOption.text.text;
-      });
-    }
-  }));
+  payload.actions.map((ac) => {
+    console.log('removing ', ac.value);
+    appDao.run(`DELETE FROM shoplist WHERE item = ?`,
+      [ac.value])
+  });
+
   return {
-    text: 'Processing...'
   };
 });
 
 slackInteractions.viewSubmission('shoplist_modal_submit', async (payload) => {
-  const blockData = payload.view.state;
-  console.log('Saving shopping list: ', itemsToBuy);
+  console.log('Saving shopping list');
+  let newShopItems = [];
+  payload.view.state.values.addTo_shoplist_select_block.addTo_shoplist_select.selected_options.map((item) => {
+    newShopItems.push(item.text.text);
+  });
+  let newShopTextItems = payload.view.state.values.addTo_shoplist_input_block.addTo_input.value.split('\n');
+  let combinedShopItems = newShopItems.concat(newShopTextItems);
+  combinedShopItems.map((citem) => {
+    if(citem !== 'none') {
+      appDao.run('INSERT INTO shoplist (item) VALUES (?)', [citem]);
+    }
+
+  });
+
   return {
     response_action: 'clear'
   };
 });
 
-slackInteractions.action({actionId: 'open_modal_button'}, async (payload) => {
+slackInteractions.action({actionId: 'edit_shop_list'}, async (payload) => {
   try {
-    //console.log("button click recieved", payload);
     await webClient.views.open({
         trigger_id: payload.trigger_id,
-        view: modalBlock
+        view: bkShopListForm
       }
     );
   } catch (e) {
@@ -175,45 +81,80 @@ slackInteractions.action({actionId: 'open_modal_button'}, async (payload) => {
   };
 });
 
+slackInteractions.action({actionId: 'view_shop_list'}, async (payload) => {
+
+  appDao.all('SELECT item from shoplist').then((result) => {
+    bkShopList.blocks = [    {
+      "type": "section",
+      "text": {
+        "type": "plain_text",
+        "text": "This is the current shopping list. \nYou can tick off items in order to remove it from the list",
+        "emoji": true
+      }
+    }];
+    result.map((r) => {
+      let section_blueprint = {
+        'type': 'section',
+        'text': {
+          'type': 'mrkdwn',
+          'text': r.item
+        },
+        'accessory': {
+          'type': 'button',
+          'action_id': 'removeFrom_shoplist_btn',
+          'text': {
+            'type': 'plain_text',
+            'text': 'Remove',
+            'emoji': true
+          },
+          'value': r.item
+        }
+      };
+      bkShopList.blocks.push(section_blueprint);
+    });
+    try {
+      webClient.views.open({
+          trigger_id: payload.trigger_id,
+          view: bkShopList
+        }
+      );
+    } catch (e) {
+      console.log('Error: ', e);
+    }
+    return {
+      text: 'Processing...'
+    };
+  });
+});
+
 slackEvents.on('app_mention', async (event) => {
   const message_text = event.text;
-  if (message_text.toLowerCase().includes('make list')) {
-    try {
-      const messageBlock = {
-        'channel': event.channel,
-        'blocks': [{
-          'type': 'section',
-          'text': {'type': 'mrkdwn', 'text': 'Click the Create button to make a new list'},
-          'accessory': {
-            'type': 'button', 'action_id': 'open_modal_button', // We need to add this
-            'text': {'type': 'plain_text', 'text': 'Create', 'emoji': true}, 'value': 'launch_button_click'
-          }
-        }]
-      };
-      const res = await webClient.chat.postMessage(messageBlock);
-    } catch (e) {
-      console.log('error: ', e);
-    }
-  } else if (message_text.toLowerCase().includes('show list')) {
-    try {
-      let itemString = itemsToBuy.join('\n');
-      const defaultMessageBlock = {
-        'channel': event.channel,
-        'text': 'SHOPLIST:\n' + itemString
-      };
-      const res = await webClient.chat.postMessage(defaultMessageBlock);
-    } catch (e) {
-      console.log('error: ', e);
-    }
-  } else {
-    try {
-      const defaultMessageBlock = {
-        'channel': event.channel,
-        'text': 'Hello!\nIf you want to create a new shopping list, type `@shoplist make list`.\nIf you want to view the existing list, type `@shoplist show list`'
-      };
-      const res = await webClient.chat.postMessage(defaultMessageBlock);
-    } catch (e) {
-      console.log('error: ', e);
-    }
+
+  try {
+    const defaultMessageBlock = {
+      'channel': event.channel,
+      'blocks': [{
+        'type': 'section',
+        'text': {'type': 'mrkdwn', 'text': ':wave: Hello'}
+      }, {
+        'type': 'section',
+        'text': {'type': 'mrkdwn', 'text': 'If you want to add to the shopping list, click "Edit"'},
+        'accessory': {
+          'type': 'button', 'action_id': 'edit_shop_list',
+          'text': {'type': 'plain_text', 'text': 'Edit', 'emoji': true}, 'value': 'edit_button_click'
+        }
+      }, {
+        'type': 'section',
+        'text': {'type': 'mrkdwn', 'text': 'If you want to view the shopping list, click "View"'},
+        'accessory': {
+          'type': 'button', 'action_id': 'view_shop_list',
+          'text': {'type': 'plain_text', 'text': 'View', 'emoji': true}, 'value': 'view_button_click'
+        }
+      }]
+    };
+    const res = await webClient.chat.postMessage(defaultMessageBlock);
+  } catch (e) {
+    console.log('error: ', e);
   }
+
 });
