@@ -6,6 +6,9 @@
     appFile : 'shoppingListBot.zip'
 
   tasks:
+    - name: "include vault variables"
+      include_vars: "vault.yml"
+
     - name: "Zip up the application directory"
       archive:
         path: "../app"
@@ -33,6 +36,10 @@
         name: nodejs
         state: latest
 
+    - name: Install NPM packages based on package.json.
+      npm:
+        path: /apps/app/
+
     - name: "Install forever (to run Node.js app)."
       become: yes
       npm:
@@ -46,5 +53,8 @@
       changed_when: false
 
     - name: "Start app."
-      command: forever start /apps/app/index.js
-      when: "forever_list.stdout.find('/apps/app/index.js') == -1"
+      command: "forever start /apps/app/app.js --workingDir=/apps/app/"
+      environment:
+        CLIENT_SIGNING_SECRET: "{{SLACK_CLIENT_SIGNING_SECRET}}"
+        BOT_TOKEN: "{{SLACK_BOT_TOKEN}}"
+      when: "forever_list.stdout.find('/apps/app/app.js') == -1"

@@ -2,10 +2,12 @@ const sqlite3 = require('sqlite3');
 const Promise = require('bluebird');
 
 class AppDAO {
-  constructor (dbFilePath) {
+  constructor (dbFile) {
+    const dbFilePath = __dirname + '/' + dbFile;
     this.db = new sqlite3.Database(dbFilePath, (err) => {
       if (err) {
         console.log('Could not connect to database', err);
+        console.log('DB path: ', dbFilePath, __dirname)
       } else {
         this.db.run(`CREATE TABLE IF NOT EXISTS shoplist (id INTEGER PRIMARY KEY AUTOINCREMENT, item TEXT)`);
         console.log('Connected to database');
