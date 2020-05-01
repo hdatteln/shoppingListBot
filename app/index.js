@@ -83,7 +83,6 @@ slackInteractions.viewSubmission('example_modal_submit' , async (payload) => {
 
 slackInteractions.action({ actionId: 'open_modal_button' }, async (payload) => {
   try {
-    console.log("button click recieved", payload);
     await webClient.views.open({
         trigger_id: payload.trigger_id,
         view: modalBlock
@@ -99,7 +98,6 @@ slackInteractions.action({ actionId: 'open_modal_button' }, async (payload) => {
 
 slackEvents.on('app_mention', async (event) => {
   try {
-    console.log(event);
     const messageBlock = {
       'channel': event.channel,
       'blocks': [{
@@ -112,7 +110,6 @@ slackEvents.on('app_mention', async (event) => {
       }]
     };
     const res = await webClient.chat.postMessage(messageBlock);
-    console.log('Message sent: ', res.ts);
   } catch (e) {
     console.log('error: ', e);
   }

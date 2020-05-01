@@ -20,3 +20,6 @@ This slack bot can be used to create, maintain and view a simple groceries shopp
 
 ## Slack app dev basics
 I have listed some generic steps for developing slack apps in the [HowTo](./HowTo.md) document.
+
+
+Author: Heidi Duchting

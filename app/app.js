@@ -39,9 +39,19 @@ slackInteractions.action({actionId: 'removeFrom_shoplist_btn'}, async (payload) 
 
 slackInteractions.viewSubmission('shoplist_modal_submit', async (payload) => {
   const shopItemsToAdd = shoplist.getAddedShopListItems(payload.view.state.values);
+  let addedNewItem = false;
   shopItemsToAdd.map((citem) => {
     if (citem.trim() !== 'none' && citem.trim() !== '') {
       appDao.run('INSERT INTO shoplist (item) VALUES (?)', [citem.trim()]);
+      addedNewItem = true;
+    }
+    if(addedNewItem) {
+      shoplist.bkListUpdateNotifyMessage.channel = payload.channel;
+      webClient.chat.postMessage(shoplist.bkListUpdateNotifyMessage).then((res, err) => {
+        if (err) {
+          console.log('error: ', err);
+        }
+      });
     }
   });
   return {
