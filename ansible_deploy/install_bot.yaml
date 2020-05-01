@@ -52,9 +52,18 @@
       register: forever_list
       changed_when: false
 
+    - name: "Restart app."
+      command: "forever restart /apps/app/app.js --workingDir=/apps/app/"
+      environment:
+        CLIENT_SIGNING_SECRET: "{{SLACK_CLIENT_SIGNING_SECRET}}"
+        BOT_TOKEN: "{{SLACK_BOT_TOKEN}}"
+        SLACK_GEN_CHANNEL: "{{SLACK_GEN_CHANNEL}}"
+      when: "forever_list.stdout.find('/apps/app/app.js') != -1"
+
     - name: "Start app."
       command: "forever start /apps/app/app.js --workingDir=/apps/app/"
       environment:
         CLIENT_SIGNING_SECRET: "{{SLACK_CLIENT_SIGNING_SECRET}}"
         BOT_TOKEN: "{{SLACK_BOT_TOKEN}}"
+        SLACK_GEN_CHANNEL: "{{SLACK_GEN_CHANNEL}}"
       when: "forever_list.stdout.find('/apps/app/app.js') == -1"

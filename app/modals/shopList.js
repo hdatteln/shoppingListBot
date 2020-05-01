@@ -199,8 +199,24 @@ const bkListUpdateNotifyMessage = {
     'text': {
       'type': 'mrkdwn',
       'text': ':ok_hand: The shopping list has been updated!'
+    },
+    'accessory': {
+      'type': 'button',
+      'action_id': 'view_shop_list',
+      'style': 'primary',
+      'text': {'type': 'plain_text', 'text': 'View', 'emoji': true},
+      'value': 'view_button_click'
     }
   }]
+};
+
+const bkListNoItems = {
+  'type': 'section',
+  'text': {
+    'type': 'plain_text',
+    'text': 'Looks like you don\'t need to buy anything',
+    'emoji': true
+  }
 };
 
 function getShopListView (listItems = [], exclude = []) {
@@ -217,6 +233,10 @@ function getShopListView (listItems = [], exclude = []) {
       }
     }
   });
+  if (bkShopList.blocks.length === 1) {
+    // only contains description; add blurb to say no items yet
+    bkShopList.blocks.push(bkListNoItems);
+  }
   return bkShopList;
 }
 

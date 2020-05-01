@@ -1,1 +1,1 @@
-ansible-playbook install_bot.yml --vault-password-file ~/.vault_pass.txt
+ansible-playbook install_bot.yaml --vault-password-file ~/.vault_pass.txt
