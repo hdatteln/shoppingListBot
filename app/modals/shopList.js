@@ -193,6 +193,16 @@ const bkShopListForm = {
   ]
 };
 
+const bkListUpdateNotifyMessage = {
+  'blocks': [{
+    'type': 'section',
+    'text': {
+      'type': 'mrkdwn',
+      'text': ':ok_hand: The shopping list has been updated!'
+    }
+  }]
+};
+
 function getShopListView (listItems = [], exclude = []) {
   bkShopList.blocks = [bkShopListDesc];
   listItems.map((listItem) => {
@@ -235,12 +245,15 @@ function getAddedShopListItems (payloadViewValues) {
   return newShopItems.concat(newShopTextItems);
 }
 
+
+
 module.exports = {
   bkShopList,
   bkShopListItem,
   bkShopListDesc,
   bkShopListForm,
   bkStartMessage,
+  bkListUpdateNotifyMessage,
   getShopListView,
   getUpdatedShopListView,
   getAddedShopListItems
