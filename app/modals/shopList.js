@@ -220,6 +220,7 @@ const bkListNoItems = {
 };
 
 function getShopListView (listItems = [], exclude = []) {
+  console.log('in get list view');
   bkShopList.blocks = [bkShopListDesc];
   listItems.map((listItem) => {
     let shopItemBase = JSON.parse(JSON.stringify(bkShopListItem));
@@ -256,7 +257,8 @@ function getUpdatedShopListView (currentListView = {}, removeItem = []) {
 
 function getAddedShopListItems (payloadViewValues) {
   let newShopItems = [];
-  if (payloadViewValues.addTo_shoplist_select_block.addTo_shoplist_select.selected_options) {
+  if (payloadViewValues.addTo_shoplist_select_block && payloadViewValues.addTo_shoplist_select_block.addTo_shoplist_select &&
+    payloadViewValues.addTo_shoplist_select_block.addTo_shoplist_select.selected_options) {
     payloadViewValues.addTo_shoplist_select_block.addTo_shoplist_select.selected_options.map((item) => {
       newShopItems.push(item.text.text);
     });
@@ -264,7 +266,6 @@ function getAddedShopListItems (payloadViewValues) {
   let newShopTextItems = payloadViewValues.addTo_shoplist_input_block.addTo_input.value.split('\n');
   return newShopItems.concat(newShopTextItems);
 }
-
 
 
 module.exports = {
